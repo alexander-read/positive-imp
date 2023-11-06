@@ -20,8 +20,9 @@ Rather than use an existing library (e.g., [parsec](https://hackage.haskell.org/
 This can be run from the command-line as follows:
 
 ```powershell
-➜ positive-imp git:(main) ✗ cabal run
-Up to date
+➜ positive-imp git:(main) ✗ stack setup  # only need to run once
+➜ positive-imp git:(main) ✗ stack build  # only need to run once
+➜ positive-imp git:(main) ✗ stack exec positive-imp-exe
 CCpCqrCCpqCpr
 ((p -> (q -> r)) -> ((p -> q) -> (p -> r)))
 ```
