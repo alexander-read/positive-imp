@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Parser
+      Pretty
   other-modules:
       Paths_positive_imp
   autogen-modules:
@@ -35,6 +36,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , pretty
   default-language: Haskell2010
 
 executable positive-imp-exe
@@ -49,6 +51,7 @@ executable positive-imp-exe
   build-depends:
       base >=4.7 && <5
     , positive-imp
+    , pretty
   default-language: Haskell2010
 
 test-suite positive-imp-test
@@ -64,4 +67,5 @@ test-suite positive-imp-test
   build-depends:
       base >=4.7 && <5
     , positive-imp
+    , pretty
   default-language: Haskell2010
