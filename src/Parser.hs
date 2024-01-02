@@ -1,9 +1,14 @@
+{-# OPTIONS_GHC -Wall -Werror -fno-warn-unused-do-bind #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Parser where
+module Parser ( Prop(..),
+                Nat(..),
+                parse,
+                parsePrefix,
+              ) where
 
-import Data.Maybe (fromJust)
-import Data.List (elemIndex)
+import Data.Maybe ( fromJust )
+import Data.List ( elemIndex )
 
 {- ----------------------------------------------------------------------- -}
 {- Grammar -}
@@ -17,11 +22,6 @@ data Nat = Zero | Succ Nat deriving (Eq, Ord)
 
 {- ----------------------------------------------------------------------- -}
 {- Parsing -}
-
-{- We follow the implementation of monadic parser combinators in Hutton and
-   Meijer (1996, 1998). The Functor and Applicative operations are not used,
-   but we need the instance declarations for the monad class declaration.
--}
 
 {-------- Types and Instances --------}
 
@@ -51,7 +51,7 @@ class MonadZero m => MonadPlus m where
     (++) :: m a -> m a -> m a
 
 instance MonadZero Parser where
-    zero = Parser $ \cs -> []
+    zero = Parser $ \_ -> []
 
 instance MonadPlus Parser where
     -- | Non-deterministic choice operator
@@ -120,29 +120,3 @@ parsePrefix = scan
 -- We might need to parse multiple occurrences of the implication operator
 -- before parsing any atoms. That is, either operand to the initial 'C' might
 -- be nested, so we recurse on both, eventually finding an atom, in 'rest imp'.
-
-{- ----------------------------------------------------------------------- -}
-{- Pretty printing -}
-
-instance Show Nat where
-    show Zero     = showVar (toInt Zero)
-    show (Succ n) = showVar (toInt (Succ n))
-
-instance Show Prop where
-    show (Atom n)  = show n
-    show (p :-> q) = showSymbol " -> " p q
-
--- | The `toInt` and `intAdd` functions were defined using the
--- 'worker/wrapper' transformation (cf. Gill and Hutton (2009)).
-toInt :: Nat -> Int
-toInt n = intAdd n 0
-
-intAdd :: Nat -> Int -> Int
-intAdd Zero m     = m
-intAdd (Succ n) m = intAdd n (1 + m)
-
-showVar :: Int -> String
-showVar n = (\c -> [c]) $ ['p'..'z'] !! n
-
-showSymbol :: String -> Prop -> Prop -> String
-showSymbol op p q = "(" Prelude.++ show p Prelude.++ op Prelude.++ show q Prelude.++ ")"
