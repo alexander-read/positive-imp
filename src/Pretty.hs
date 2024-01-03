@@ -13,7 +13,7 @@ import Parser ( Prop(..), Nat(..) )
 {- Pretty Printing -}
 
 -- A `Prop` is an AST, so printing one in prefix or infix notation is a matter
--- of doing post-order or in-order traversal over the input tree.
+-- of doing pre-order or in-order traversal over the input tree.
 
 pprintInf :: Prop -> IO ()
 pprintInf = putStrLn . render . pprInfix
