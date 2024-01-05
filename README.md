@@ -12,6 +12,12 @@ Provided you have GHC, stack, etc., installed, clone this repository and run:
 ➜ positive-imp git:(main) stack exec positive-imp-exe
 Welcome to the REPL!
 To quit, type ':q'
+Implication>
+```
+
+Then, simply type any prefix formula, and you should get the infix variant:
+
+```powershell
 Implication> CCpCqrCCpqCpr
 ((p -> (q -> r)) -> ((p -> q) -> (p -> r)))
 ```
