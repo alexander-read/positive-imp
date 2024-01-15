@@ -7,6 +7,7 @@ import Parser
 import Pretty
 
 -- TODO: use flags to determine infix or prefix parsing
+-- Add some error handling with `Either` and tidy up `eval`
 
 main :: IO ()
 main = do
