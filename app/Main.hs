@@ -7,7 +7,8 @@ import Parser
 import Pretty
 
 -- TODO: use flags to determine infix or prefix parsing
--- Add some error handling with `Either` and tidy up `eval`
+
+newtype Error = InvalidExpr { msg :: String } -- add simple error for now
 
 main :: IO ()
 main = do
@@ -18,7 +19,9 @@ main = do
 mainAux :: IO ()
 mainAux = do
     expr <- greet
-    unless (expr == ":q") $ pprintInf (eval expr) >> mainAux
+    unless (expr == ":q") $ case eval expr of
+        Right tree -> pprintInf tree >> mainAux
+        Left error -> (putStrLn $ msg error) >> mainAux
 
 greet :: IO String
 greet = do
@@ -26,5 +29,8 @@ greet = do
     hFlush stdout
     getLine
 
-eval :: String -> Prop
-eval str = fst $ (parse parsePrefix str) !! 0
+-- The parser fails if it returns the empty list
+eval :: String -> Either Error Prop
+eval str = case parse parsePrefix str of
+    []    -> Left  $ InvalidExpr "Invalid expression!"
+    (p:_) -> Right $ fst p
