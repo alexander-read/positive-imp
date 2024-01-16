@@ -2,6 +2,8 @@
 
 A parser for (the positive, implicational fragment of) intuitionistic propositional logic.
 
+(TODO: implement condensed detachment using 'core' of Hindley-Milner algorithm).
+
 An overview of some background material is [here](https://alexander-read.github.io/parsing-prefix.html).
 
 Provided you have GHC, stack, etc., installed, clone this repository and run:
