@@ -1,13 +1,18 @@
-{-# OPTIONS_GHC -Wall -Werror #-}
+{-# OPTIONS_GHC -Wall   #-}
+{-# OPTIONS_GHC -Werror #-}
 
-module Pretty ( pprintInf,
-                pprintPref,
-              ) where
+-- |
+-- Module      : Language.Pretty
+-- Description : Pretty printer for L->
+module Language.Pretty
+    ( pprintInf
+    , pprintPref
+    ) where
 
-import Text.PrettyPrint.HughesPJ ( Doc, text, parens, render, (<>), (<+>) )
 import Prelude hiding ( (<>) )
+import Text.PrettyPrint.HughesPJ ( Doc, text, parens, render, (<>), (<+>) )
 
-import Parser ( Prop(..), Nat(..) )
+import Language.Parser ( Prop(..), Nat(..) )
 
 {- ----------------------------------------------------------------------- -}
 {- Pretty Printing -}
@@ -28,9 +33,6 @@ pprInfix (p :-> q) = parens $ pprInfix p <+> text "->" <+> pprInfix q
 pprPrefix :: Prop -> Doc
 pprPrefix (Atom n)  = text $ showVar (toInt n)
 pprPrefix (p :-> q) = text "C" <> pprPrefix p <> pprPrefix q
-
-{- ----------------------------------------------------------------------- -}
-{- Auxiliary Functions -}
 
 -- | The `toInt` and `intAdd` functions were defined using the
 -- 'worker/wrapper' transformation (cf. Gill and Hutton (2009)).
