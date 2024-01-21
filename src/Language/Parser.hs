@@ -102,7 +102,7 @@ atom :: Parser Char
 atom = satisfy (`elem` ['p'..'z'])
 
 -- | Parse an atom. Using `Int` might be simpler, but Peano
--- numbers match the gramar for L-> in a nice way
+-- numbers match the grammar for L-> in a nice way
 parseAtom :: Parser Prop
 parseAtom = do {var <- token atom; return $ Atom (numeral var)}
   where
