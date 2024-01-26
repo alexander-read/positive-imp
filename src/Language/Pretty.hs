@@ -7,12 +7,14 @@
 module Language.Pretty
     ( pprintInf
     , pprintPref
+    , pprintNested
     ) where
 
 import Prelude hiding ( (<>) )
-import Text.PrettyPrint.HughesPJ ( Doc, text, parens, render, (<>), (<+>) )
 
 import Language.Parser ( Prop(..), Nat(..) )
+
+import Text.PrettyPrint.HughesPJ ( Doc, text, parens, render, nest, (<>), (<+>) )
 
 {- ----------------------------------------------------------------------- -}
 {- Pretty Printing -}
@@ -33,6 +35,9 @@ pprInfix (p :-> q) = parens $ pprInfix p <+> text "->" <+> pprInfix q
 pprPrefix :: Prop -> Doc
 pprPrefix (Atom n)  = text $ showVar (toInt n)
 pprPrefix (p :-> q) = text "C" <> pprPrefix p <> pprPrefix q
+
+pprintNested :: String -> IO ()
+pprintNested = putStrLn . render . nest 4 . text
 
 -- | The `toInt` and `intAdd` functions were defined using the
 -- 'worker/wrapper' transformation (cf. Gill and Hutton (2009)).
