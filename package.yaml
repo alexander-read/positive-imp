@@ -24,6 +24,7 @@ dependencies:
 - pretty
 - haskeline
 - mtl
+- containers
 
 ghc-options:
 - -Wall
