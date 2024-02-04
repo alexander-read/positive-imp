@@ -27,8 +27,8 @@ There is also a parser to go between prefix and infix notation for formulae.
 
 This is a work in progress.
 
-[^1] Named after [C.A. Meredith](https://en.wikipedia.org/wiki/Carew_Arthur_Meredith) and David Meredith
+[^1]: Named after [C.A. Meredith](https://en.wikipedia.org/wiki/Carew_Arthur_Meredith) and David Meredith
 
-[^2] Hindley, J.R. (1997), _Basic Simple Type Theory_, p.93
+[^2]: Hindley, J.R. (1997), _Basic Simple Type Theory_, p.93
 
 [^3]: See also Hindley, J.R. & Meredith, D. (1990), 'Principal Type-Schemes and Condensed Detachment', The Journal of Symbolic Logic, 55(1):90–105
