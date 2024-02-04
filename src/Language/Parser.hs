@@ -3,30 +3,20 @@
 
 {-# LANGUAGE LambdaCase #-}
 
+----------------------------------------------------------------------------
 -- |
 -- Module      : Language.Parser
 -- Description : Parser for the language L->
+--
+----------------------------------------------------------------------------
 module Language.Parser
-    ( Prop (..)
-    , Nat (..)
-    , runParser
-    , parseProp
-    ) where
+  ( runParser
+  , parseProp
+  ) where
+
+import Language.Grammar ( Prop(..), PVar(..) )
 
 import Control.Applicative ( Alternative, empty, (<|>) )
-import Data.Char ( ord )
-
--- TODO: add QuickCheck tests for parsing
-
-{- ----------------------------------------------------------------------- -}
-{- Grammar -}
-
-data Prop = Atom Nat
-           | Prop :-> Prop
-           deriving (Eq, Ord)
-infixr 4 :-> -- implication is right associative
-
-data Nat = Zero | Succ Nat deriving (Eq, Ord)
 
 {- ----------------------------------------------------------------------- -}
 {- Parsing -}
@@ -82,7 +72,6 @@ string (x:xs) = char x >> string xs >> return (x:xs)
 space :: Parser String
 space = many $ satisfy isSpace
   where
-    isSpace :: Char -> Bool
     isSpace s = (s == ' ' || s == '\n' || s == '\t')
 
 token :: Parser a -> Parser a
@@ -101,15 +90,10 @@ parseImp = (symbol "C" <|> symbol "->") >> return (:->)
 atom :: Parser Char
 atom = satisfy (`elem` ['p'..'z'])
 
--- | Parse an atom. Using `Int` might be simpler, but Peano
--- numbers match the grammar for L-> in a nice way
+-- | Parse an atom. This previously used Church numerals to build atoms.
+-- That felt more elegant, but Strings are easier for unification
 parseAtom :: Parser Prop
-parseAtom = do {var <- token atom; return $ Atom (numeral var)}
-  where
-    numeral                  = church Succ Zero . index
-    index                    = (`mod` 112) . ord
-    church f x n | n == 0    = x
-                 | otherwise = f $ church f x (n - 1)
+parseAtom = do {var <- token atom; return $ Atom $ P [var]}
 
 -- | Parse a prefix-style formula (adapted from `chainr` in Parsec)
 parsePrefix :: Parser Prop

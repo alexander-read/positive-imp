@@ -1,52 +1,70 @@
 {-# OPTIONS_GHC -Wall   #-}
 {-# OPTIONS_GHC -Werror #-}
 
+----------------------------------------------------------------------------
 -- |
 -- Module      : Language.Pretty
 -- Description : Pretty printer for L->
+--
+----------------------------------------------------------------------------
 module Language.Pretty
-    ( pprintInf
-    , pprintPref
-    , pprintNested
+    ( pprInf
+    , pprPref
+    , pprSubst
+    , pprError
+    , pprNested
     ) where
 
 import Prelude hiding ( (<>) )
 
-import Language.Parser ( Prop(..), Nat(..) )
+import Language.Grammar
 
-import Text.PrettyPrint.HughesPJ ( Doc, text, parens, render, nest, (<>), (<+>) )
+import Data.Map.Strict ( toList )
+import Text.PrettyPrint.HughesPJ
 
 {- ----------------------------------------------------------------------- -}
-{- Pretty Printing -}
+{- Propositional Formulae -}
 
--- A `Prop` is an AST, so printing one in prefix or infix notation is a matter
--- of doing pre-order or in-order traversal over the input tree.
+-- | Pretty print a proposition in infix notation
+pprInf :: Prop -> IO ()
+pprInf = putStrLn . render . pprintInfix
 
-pprintInf :: Prop -> IO ()
-pprintInf = putStrLn . render . pprInfix
+-- | Pretty print a proposition in prefix notation
+pprPref :: Prop -> IO ()
+pprPref = putStrLn . render . pprintPrefix
 
-pprintPref :: Prop -> IO ()
-pprintPref = putStrLn . render . pprPrefix
+-- | In-order traversal of the AST
+pprintInfix :: Prop -> Doc
+pprintInfix (Atom n)  = text $ name n
+pprintInfix (p :-> q) = parens $ pprintInfix p <+> text "->" <+> pprintInfix q
 
-pprInfix :: Prop -> Doc
-pprInfix (Atom n)  = text $ showVar (toInt n)
-pprInfix (p :-> q) = parens $ pprInfix p <+> text "->" <+> pprInfix q
+-- | Pre-order traversal of the AST
+pprintPrefix :: Prop -> Doc
+pprintPrefix (Atom n)  = text $ name n
+pprintPrefix (p :-> q) = text "C" <> pprintPrefix p <> pprintPrefix q
 
-pprPrefix :: Prop -> Doc
-pprPrefix (Atom n)  = text $ showVar (toInt n)
-pprPrefix (p :-> q) = text "C" <> pprPrefix p <> pprPrefix q
+{--------------------------------------------------------------------------}
+{- Substitutions -}
 
-pprintNested :: String -> IO ()
-pprintNested = putStrLn . render . nest 4 . text
+-- | Pretty print a substitution
+pprSubst :: Subst -> IO ()
+pprSubst = putStrLn . render . brackets . vcat . pprPair . toList
 
--- | The `toInt` and `intAdd` functions were defined using the
--- 'worker/wrapper' transformation (cf. Gill and Hutton (2009)).
-toInt :: Nat -> Int
-toInt n = intAdd n 0
+pprPair :: [(PVar, Prop)] -> [Doc]
+pprPair xs = punctuate (text ",") (pprSub <$> xs)
+  where
+    pprSub (t, v) = (text $ name t) <+> text "|->" <+> (pprintInfix $ v)
 
-intAdd :: Nat -> Int -> Int
-intAdd Zero m     = m
-intAdd (Succ n) m = intAdd n (1 + m)
+{--------------------------------------------------------------------------}
+{- Utility Functions -}
 
-showVar :: Int -> String
-showVar n = (\c -> [c]) $ ['p'..'z'] !! n
+-- | Pretty print errors
+pprError :: PropError -> IO ()
+pprError = putStrLn . render . pprintErr
+  where
+    pprintErr err = case err of
+        (DErr p q) -> pprintInfix q <+> text "is not detachable from" <+> pprintInfix p
+        (UErr p q) -> pprintInfix p <+> text "cannot be unified with" <+> pprintInfix q
+
+pprNested :: String -> IO ()
+pprNested = putStrLn . render . nest 4 . text
