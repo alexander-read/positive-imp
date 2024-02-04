@@ -19,7 +19,7 @@ You will be greeted with a REPL to compute (condensed) detachments:
 
 ![Meredith example](meredith-example.gif)
 
-These input formulae are written prefix-style, using $`C'$ for $`{\to}'$.
+These input formulae are written prefix-style, using $C$ for ${\to}$.
 There is also a parser to go between prefix and infix notation for formulae.
 
 This is a work in progress.
