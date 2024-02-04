@@ -136,8 +136,6 @@ condense p q = case p of
     where
       mgu = unify p1 q'
       q'  = apply (rename q p) q
-      -- produce a variant mgu' of mgu so that no new variable in mgu'(p1) occurs in p2
-      -- (fv(mgu'(p1)) \ fv(p1)) `intersect` fv(p2) = empty
 
 -- Given a pair (p1 -> p2, q), we treat the equation `p1 === q` as a constraint
 -- to solve using the unification algorithm. If there is an mgu S, then the
