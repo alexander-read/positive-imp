@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall   #-}
 {-# OPTIONS_GHC -Werror #-}
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 {-# LANGUAGE LambdaCase #-}
 
@@ -12,9 +13,11 @@
 module Language.Parser
   ( runParser
   , parseProp
+  , parseValue
   ) where
 
 import Language.Grammar ( Prop(..), PVar(..) )
+import Language.State ( Value(..) )
 
 import Control.Applicative ( Alternative, empty, (<|>) )
 
@@ -88,7 +91,7 @@ parseImp = (symbol "C" <|> symbol "->") >> return (:->)
 
 -- | Propositional atoms
 atom :: Parser Char
-atom = satisfy (`elem` ['p'..'z'])
+atom = satisfy (`elem` ['a'..'z'])
 
 -- | Parse an atom. This previously used Church numerals to build atoms.
 -- That felt more elegant, but Strings are easier for unification
@@ -120,3 +123,21 @@ parseInfix = parseCompound <|> parseAtom
 -- | Parse an infix- or prefix-style formula
 parseProp :: Parser Prop
 parseProp = parsePrefix <|> parseInfix
+
+{-------- Parsers for Values --------}
+
+-- Value declarations are not part of the grammar for L-> but we need to
+-- parse them in the REPL to manage state
+
+digit :: Parser Char
+digit = satisfy (`elem` ['0'..'9'])
+
+parseName :: Parser Int
+parseName = read <$> (many $ token digit)
+
+-- | Parse a value declaration
+parseValue :: Parser Value
+parseValue = do
+  ident <- parseName <* symbol "="
+  prop  <- parseProp
+  return $ Val ident prop

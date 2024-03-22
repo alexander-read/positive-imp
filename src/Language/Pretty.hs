@@ -11,6 +11,7 @@ module Language.Pretty
     ( pprInf
     , pprPref
     , pprSubst
+    , pprVals
     , pprError
     , pprNested
     ) where
@@ -18,12 +19,14 @@ module Language.Pretty
 import Prelude hiding ( (<>) )
 
 import Language.Grammar
+import Language.State
 
-import Data.Map.Strict ( toList )
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Map.Strict as Map
 import Text.PrettyPrint.HughesPJ
 
 {- ----------------------------------------------------------------------- -}
-{- Propositional Formulae -}
+{- Propositional Formulae and Values -}
 
 -- | Pretty print a proposition in infix notation
 pprInf :: Prop -> IO ()
@@ -43,12 +46,21 @@ pprintPrefix :: Prop -> Doc
 pprintPrefix (Atom n)  = text $ name n
 pprintPrefix (p :-> q) = text "C" <> pprintPrefix p <> pprintPrefix q
 
+-- | Pretty print the variables
+pprVals :: Values -> IO ()
+pprVals vs = putStrLn $ render $ brackets $ vcat $ pprintVals $ IntMap.toList $ vals vs
+
+pprintVals :: [(Int, Prop)] -> [Doc]
+pprintVals xs = punctuate (text ",") (pprVal <$> xs)
+  where
+    pprVal (n, p) = (text $ show n) <+> char '=' <+> pprintPrefix p
+
 {--------------------------------------------------------------------------}
 {- Substitutions -}
 
 -- | Pretty print a substitution
 pprSubst :: Subst -> IO ()
-pprSubst = putStrLn . render . brackets . vcat . pprPair . toList
+pprSubst = putStrLn . render . brackets . vcat . pprPair . Map.toList
 
 pprPair :: [(PVar, Prop)] -> [Doc]
 pprPair xs = punctuate (text ",") (pprSub <$> xs)

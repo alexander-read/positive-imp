@@ -6,8 +6,8 @@
 -- Module      : Language.Repl
 -- Description : A REPL for L->
 --
--- TODO: use `System.Console.Haskeline` to be a bit more sophisticated
--- Pretty print condensed detachments using Meredith's 'D'-notation?
+-- TODO: could use 'tagless final' style for the monad transformer to
+-- to reduce the noise of using `lift` everywhere
 --
 ----------------------------------------------------------------------------
 module Language.Repl ( main ) where
@@ -15,17 +15,23 @@ module Language.Repl ( main ) where
 import Language.Grammar
 import Language.Parser
 import Language.Pretty
+import Language.State
 
 import System.IO ( stdout, hFlush )
 
+import Data.Char ( isSpace )
 import Data.Function ( (&) )
-import Data.Map.Strict as Map
+import qualified Data.IntMap.Strict as IntMap
+import qualified Data.Map.Strict as Map
+
+import Control.Monad.Trans ( lift )
+import Control.Monad.Trans.State.Strict
 
 main :: IO ()
 main = do
     putStrLn "Welcome to the REPL for L->."
     putStrLn "Type `:h` for a list of commands."
-    mainAux
+    evalStateT mainAux emptyVals
 
 -- | Command line prompt
 getInputLine :: String -> IO String
@@ -34,105 +40,123 @@ getInputLine prompt = do
     hFlush stdout >> getLine
 
 -- | The loop for the REPL
-mainAux :: IO ()
+mainAux :: StateT Values IO ()
 mainAux = do
-    input <- getInputLine "φ> "
+    input <- lift $ getInputLine "φ> "
     case input of
         (':' : rest) -> runCommand rest
-        expr         -> runProp expr
+        expr         -> runValue expr >> mainAux
 
 -- | Simple error handling
 data Error = InvalidExpr { msg :: String } | InvalidCmd  { msg :: String }
 
-{--------------------------------------------------------------------------}
-{- Parsing the Language -}
+-- | The 'default' state of the REPL is to try to parse a value declaration.
+-- If successful the value is added to the global state
+runValue :: String -> StateT Values IO ()
+runValue str = case parseVal str of
+    Right val -> modify $ addVal val
+    Left err  -> lift $ putStrLn (msg err)
 
--- | Run a proposition. At the moment this just parses an expression and
--- pretty prints the AST using infix notation. Eventually, I'd like to
--- store formulae in variables instead, which can then be used for the
--- parsing and detachment options in the utility commands
-runProp :: String -> IO ()
-runProp str = case parse str of
-    Right tree -> putStr "=== " >> pprInf tree >> mainAux
-    Left err   -> putStrLn (msg err) >> mainAux
+-- | Parse a value declaration
+parseVal :: String -> Either Error Value
+parseVal str = case runParser parseValue str of
+    []    -> Left  $ InvalidExpr "Invalid value declaration!"
+    (v:_) -> Right $ fst v
 
--- | Parse an expression. If the parser fails it returns the empty list
+-- | Parse a formula. If the parser fails it returns the empty list
 parse :: String -> Either Error Prop
 parse str = case runParser parseProp str of
-    []    -> Left  $ InvalidExpr "Invalid expression!"
+    []    -> Left  $ InvalidExpr "Invalid formula!"
     (p:_) -> Right $ fst p
 
 {--------------------------------------------------------------------------}
 {- Utility Commands -}
 
--- | Run a command from the options
-runCommand :: String -> IO ()
+-- | Run a command from the options.
+-- This is roughly how GHC's REPL does it
+runCommand :: String -> StateT Values IO ()
 runCommand = getCommand commands
   where
-    getCommand options str = case options Map.!? str of
-        Nothing  -> display (InvalidCmd "Invalid command!") >> mainAux
-        Just cmd -> cmd str
+    getCommand options input =
+        let (command, exprs) = break isSpace input in
+            case options Map.!? command of
+                Nothing  -> (lift $ display (InvalidCmd "Invalid command!")) >> mainAux
+                Just cmd -> cmd $ trimFront exprs
     display = putStrLn . msg
 
 -- | The REPL command options
-commands :: Map String (String -> IO ())
-commands = [ ("q",      quitRepl)
-           , ("h",      helpRepl)
-           , ("prefix", prefixRepl)
-           , ("infix",  infixRepl)
-           , ("d",      detachRepl)
-           , ("cd",     condenseRepl)
+commands :: Map.Map String (String -> StateT Values IO ())
+commands = [ ("d",    condCmd)
+           , ("h",    helpCmd)
+           , ("i",    infxCmd)
+           , ("p",    prefCmd)
+           , ("q",    quitCmd)
+           , ("v",    valsCmd)
            ] & Map.fromList
 
-quitRepl :: String -> IO ()
-quitRepl _ = putStrLn "Leaving L->" >> return ()
+-- | Exit the REPL
+quitCmd :: String -> StateT Values IO ()
+quitCmd _ = lift $ putStrLn "Leaving L->" >> return ()
 
-prefixRepl :: String -> IO ()
-prefixRepl _ = do
-    expr <- getInputLine "φ> "
+-- | Display the current values in state
+valsCmd :: String -> StateT Values IO ()
+valsCmd _ = get >>= lift . pprVals >> mainAux
+
+-- | Pretty print an expression in infix notation
+infxCmd :: String -> StateT Values IO ()
+infxCmd = pprintExpr pprInf
+
+-- | Pretty print an expression in prefix notation
+prefCmd :: String -> StateT Values IO ()
+prefCmd = pprintExpr pprPref
+
+-- | Printer for the REPL parameterised over a pretty printer
+pprintExpr :: (Prop -> IO ()) -> String -> StateT Values IO ()
+pprintExpr printer expr = do
     case parse expr of
-        Right tree -> putStr "=== " >> pprPref tree >> mainAux
-        Left err   -> putStrLn (msg err) >> mainAux
+        Right tree -> lift $ putStr "φ> " >> printer tree
+        Left err   -> lift $ putStrLn (msg err)
+    mainAux
 
-infixRepl :: String -> IO ()
-infixRepl _ = do
-    expr <- getInputLine "φ> "
-    case parse expr of
-        Right tree -> putStr "=== " >> pprInf tree >> mainAux
-        Left err   -> putStrLn (msg err) >> mainAux
+-- | Computes the condensed detachment of two formulae, and
+-- stores the result as a fresh value in the state
+condCmd :: String -> StateT Values IO ()
+condCmd exprs = let (p, q) = trimFront <$> break isSpace exprs in do
+        vals'@(Values state') <- get
+        case detachAux (read p) (read q) vals' of
+            Left err       -> lift $ putStrLn $ message err
+            Right (p', q') -> let c = condense p' q' in do
+                _ <- modify $ addVal (Val (getFresh state') c)
+                lift $ putStr "φ> " >> (pprPref c)
+        mainAux
 
-detachRepl :: String -> IO ()
-detachRepl _ = do
-    p <- getInputLine "φ> P1. "
-    q <- getInputLine "φ> P2. "
-    case detachAux p q of
-        Left err       -> putStrLn (msg err) >> mainAux
-        Right (p1, p2) -> case detach p1 p2 of
-            Right prop -> putStr "φ> C.  " >> pprInf prop >> mainAux
-            Left err   -> pprError err >> mainAux
+-- | Get a 'fresh' value name for the state
+getFresh :: IntMap.IntMap Prop -> Int
+getFresh m = case IntMap.lookupMax m of
+    Nothing     -> 1
+    Just (k, _) -> k + 1
 
-condenseRepl :: String -> IO ()
-condenseRepl _ = do
-    p <- getInputLine "φ> P1. "
-    q <- getInputLine "φ> P2. "
-    case detachAux p q of
-        Left err       -> putStrLn (msg err) >> mainAux
-        Right (p1, p2) -> putStr "φ> C.  " >> (pprInf $ condense p1 p2) >> mainAux
-        -- Could also pretty print the mgu?
-
-detachAux :: String -> String -> Either Error (Prop, Prop)
-detachAux p q = case (parse p, parse q) of
+detachAux :: Int -> Int -> Values -> Either LookupErr (Prop, Prop)
+detachAux p q values = case (lookupVal p values, lookupVal q values) of
     (Left err, _)        -> Left err
     (_, Left err)        -> Left err
     (Right p1, Right p2) -> Right (p1, p2)
 
-helpRepl :: String -> IO ()
-helpRepl _ = do
-    putStrLn  " Commands in the L-> REPL:"
-    pprNested ":q       Quits the REPL"
-    pprNested ":d       Computes the detachment of two formulae"
-    pprNested ":cd      Computes the condensed detachment of two formulae"
-    pprNested ":prefix  Parses an expression, prints AST in prefix format"
-    pprNested ":infix   Parses an expression, prints AST in infix format"
-    pprNested ":h       Displays the command options"
+helpCmd :: String -> StateT Values IO ()
+helpCmd _ = do
+    lift $ putStrLn  " Commands in the L-> REPL:"
+    lift $ pprNested ":q                Quits the REPL"
+    lift $ pprNested ":v                Displays the current value declarations"
+    lift $ pprNested ":d <val> <val>    Computes the condensed detachment of two formulae"
+    lift $ pprNested ":i <expr>         Parses an expression, prints AST in infix format"
+    lift $ pprNested ":p <expr>         Parses an expression, prints AST in prefix format"
+    lift $ pprNested ":h                Displays the command options"
+    lift $ putStrLn  "You can create a globally scoped value with: `<val> = <expr>`"
+    lift $ putStrLn  "where a `val` is any numeric string"
     mainAux
+
+-- | From Data.String.Utils, need to fix import
+trimFront :: String -> String
+trimFront str = case str of
+    []     -> []
+    (x:xs) -> if elem x " \t\n\r" then trimFront xs else str
