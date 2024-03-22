@@ -25,6 +25,7 @@ dependencies:
 - haskeline
 - mtl
 - containers
+- transformers
 
 ghc-options:
 - -Wall

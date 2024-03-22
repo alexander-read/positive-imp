@@ -29,6 +29,7 @@ library
       Language.Parser
       Language.Pretty
       Language.Repl
+      Language.State
   other-modules:
       Paths_positive_imp
   autogen-modules:
@@ -40,8 +41,10 @@ library
       base >=4.7 && <5
     , containers
     , haskeline
+    , missingH
     , mtl
     , pretty
+    , transformers
   default-language: Haskell2010
 
 executable positive-imp-exe
@@ -57,9 +60,11 @@ executable positive-imp-exe
       base >=4.7 && <5
     , containers
     , haskeline
+    , missingH
     , mtl
     , positive-imp
     , pretty
+    , transformers
   default-language: Haskell2010
 
 test-suite positive-imp-test
@@ -76,7 +81,9 @@ test-suite positive-imp-test
       base >=4.7 && <5
     , containers
     , haskeline
+    , missingH
     , mtl
     , positive-imp
     , pretty
+    , transformers
   default-language: Haskell2010
