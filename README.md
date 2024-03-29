@@ -17,7 +17,7 @@ $ stack exec positive-imp-exe
 
 You will be greeted with a REPL to compute (condensed) detachments:
 
-![Meredith example](meredith-example.gif)
+![Meredith example](meredith-detachment.gif)
 
 These input formulae are written prefix-style, using $C$ for ${\to}$, and compute the final detachment in [this paper](https://projecteuclid.org/journals/notre-dame-journal-of-formal-logic/volume-15/issue-3/On-Merediths-sole-positive-axiom/10.1305/ndjfl/1093891409.full).
 There is also a parser to go between prefix and infix notation for formulae.
