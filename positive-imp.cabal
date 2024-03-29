@@ -41,7 +41,6 @@ library
       base >=4.7 && <5
     , containers
     , haskeline
-    , missingH
     , mtl
     , pretty
     , transformers
@@ -60,7 +59,6 @@ executable positive-imp-exe
       base >=4.7 && <5
     , containers
     , haskeline
-    , missingH
     , mtl
     , positive-imp
     , pretty
@@ -81,7 +79,6 @@ test-suite positive-imp-test
       base >=4.7 && <5
     , containers
     , haskeline
-    , missingH
     , mtl
     , positive-imp
     , pretty
