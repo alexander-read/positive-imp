@@ -82,12 +82,35 @@ s ... g = thread s g `Map.union` s
 -- | Given propositional formulae q and p, generate a re-naming for q so that it
 -- has no variables in common with p. This is useful for condensed detachment
 rename :: Prop -> Prop -> Subst
-rename q p = genFresh commonVars varGen
+rename q p = genFreshSubst commonVars q varGen
   where
-    genFresh []     _   = Map.empty
-    genFresh (x:xs) gen = Map.fromList [(x, getVar $ gen ())] ... genFresh xs (next $ gen ())
-    commonVars          = Set.toList $ fv q `Set.intersection` fv p
-    getVar              = Atom . P . fresh
+    commonVars = Set.toList $ fv p `Set.intersection` fv q
+
+-- | Given a list of variables and a formula, generate a substitution from variables
+-- in the list to fresh variables that do not occur in the formula
+genFreshSubst :: [PVar] -> Prop -> UVarGenerator -> Subst
+genFreshSubst xs q gen = go xs xs gen
+  where
+    go []     _  _ = Map.empty
+    go _      [] _ = Map.empty
+    go (y:ys) zs g = go ys (newVar : zs) (getNextGen g) ... Map.fromList [(y, Atom newVar)]
+      where
+        newVar = snd $ newVariable (zs ++ (Set.toList $ fv q)) gen
+
+-- Check that the fresh generated variable is not in [PVar]
+newVariable :: [PVar] -> UVarGenerator -> (UVarGenerator, PVar)
+newVariable xs gen = let var = getFreshVar gen in
+  if var `elem` xs
+    then newVariable xs (getNextGen gen)
+    else (gen, var)
+
+-- | Generate a fresh variable
+getFreshVar :: UVarGenerator -> PVar
+getFreshVar gen = P . fresh $ gen ()
+
+-- | Get the next generator
+getNextGen :: UVarGenerator -> UVarGenerator
+getNextGen gen = next $ gen ()
 
 -- | Generate a fresh variable and the next generator (Pierce: 326)
 varGen :: UVarGenerator
@@ -117,7 +140,7 @@ unify p q | p == q    = Map.empty
   where
     genSub :: PVar -> Prop -> Subst
     genSub z t | z `Set.notMember` fv t = Map.fromList [(z, t)]
-               | otherwise              = error "unification failed"
+               | otherwise              = error $ "Couldn't unify " ++ name z ++ " and " ++ show t
 
 {--------------------------------------------------------------------------}
 {- Condensed Detachment -}
