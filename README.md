@@ -20,6 +20,7 @@ You will be greeted with a REPL to compute (condensed) detachments:
 ![Meredith example](meredith-detachment.gif)
 
 These input formulae are written prefix-style, using $C$ for ${\to}$, and compute the final detachment in [this paper](https://projecteuclid.org/journals/notre-dame-journal-of-formal-logic/volume-15/issue-3/On-Merediths-sole-positive-axiom/10.1305/ndjfl/1093891409.full).
+The conclusion $CCp_2Cp_0p_1CCp_2p_0Cp_2p_1$ is ${\alpha}$-equivalent to $CCpCqrCCpqCpr$.
 There is also a parser to go between prefix and infix notation for formulae.
 
 This is a work in progress.
