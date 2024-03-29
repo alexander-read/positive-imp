@@ -93,14 +93,29 @@ parseImp = (symbol "C" <|> symbol "->") >> return (:->)
 atom :: Parser Char
 atom = satisfy (`elem` ['a'..'z'])
 
--- | Parse an atom. This previously used Church numerals to build atoms.
--- That felt more elegant, but Strings are easier for unification
+-- | Parse an atom
 parseAtom :: Parser Prop
 parseAtom = do {var <- token atom; return $ Atom $ P [var]}
 
+-- | Numeric digits
+digit :: Parser Char
+digit = satisfy (`elem` ['0'..'9'])
+
+-- | Parse a variable, i.e., an atom possibly succeeded by many digits
+parseVar :: Parser Prop
+parseVar = parseVariable <|> parseAtom
+  where
+    parseVariable :: Parser Prop
+    parseVariable = do
+      var  <- token atom <* symbol "_"
+      nums <- many $ token digit
+      return $ Atom $ P (var: "_" ++ nums)
+
+-- This needs to parse variables like `p_0`
+
 -- | Parse a prefix-style formula (adapted from `chainr` in Parsec)
 parsePrefix :: Parser Prop
-parsePrefix = parseCompound <|> parseAtom
+parsePrefix = parseCompound <|> parseVar
   where
     parseCompound :: Parser Prop
     parseCompound = do
@@ -111,7 +126,7 @@ parsePrefix = parseCompound <|> parseAtom
 
 -- | Parse an infix-style formula
 parseInfix :: Parser Prop
-parseInfix = parseCompound <|> parseAtom
+parseInfix = parseCompound <|> parseVar
   where
     parseCompound :: Parser Prop
     parseCompound = do
@@ -128,9 +143,6 @@ parseProp = parsePrefix <|> parseInfix
 
 -- Value declarations are not part of the grammar for L-> but we need to
 -- parse them in the REPL to manage state
-
-digit :: Parser Char
-digit = satisfy (`elem` ['0'..'9'])
 
 parseName :: Parser Int
 parseName = read <$> (many $ token digit)
