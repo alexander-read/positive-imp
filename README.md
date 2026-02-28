@@ -1,18 +1,32 @@
 # Meredith
 
-Meredith[^1] is an interactive environment for $L{\to}$, the positive implicational fragment of intuitionistic propositional logic.
-This currently implements a parser and a 'resolution rule'[^2], _condensed detachment_, for $L{\to}$. Condensed detachment does some substitution and _modus ponens_ on a pair of $L{\to}$ formulae, and makes use of the Unification algorithm from Hindley-Milner type inference.
+Meredith[^1] is an interactive environment for $L{\to}$, the positive implicational fragment of the intuitionistic propositional calculus.
+The project currently implements a parser and a 'resolution rule'[^2], _condensed detachment_, for $L{\to}$. Condensed detachment does some substitution and _modus ponens_ on a pair of $L{\to}$ formulae, and makes use of the Unification algorithm from Hindley-Milner type inference.
 
 An overview of some background material is [here](https://alexander-read.github.io/parsing-prefix.html).[^3]
 
-## Installation
+## Running the Application
 
-Provided you have GHC, stack, etc., installed, clone this repository and run in the `/positive-imp` directory:
+To get started, clone this repository:
 
-```powershell
-$ stack setup
-$ stack build
-$ stack exec positive-imp-exe
+```bash
+$ git clone https://github.com/alexander-read/positive-imp
+$ cd positive-imp
+```
+
+You can run the application through Docker without installing Haskell.
+
+Provided you have Docker open, input the following to build and then run the app:
+
+```bash
+$ make build
+$ make run
+```
+
+You can also build and then run in one step:
+
+```bash
+$ make start
 ```
 
 You will be greeted with a REPL to compute (condensed) detachments:
